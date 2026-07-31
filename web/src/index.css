@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-bg text-slate-200 font-sans antialiased;
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  /* Los spinners de los inputs numéricos estorban en móvil */
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0d1117;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #2a3441;
+    border-radius: 6px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3a4757;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-panel border border-border rounded-xl;
+  }
+
+  .label {
+    @apply block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5;
+  }
+
+  .input {
+    @apply w-full bg-panel2 border border-border rounded-lg px-3 py-2.5 text-slate-100
+           placeholder:text-slate-600 outline-none transition-colors
+           focus:border-gold focus:ring-1 focus:ring-gold/40;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold
+           transition-colors disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-gold text-black hover:bg-amber-400;
+  }
+
+  .btn-ghost {
+    @apply btn bg-panel2 border border-border text-slate-300 hover:border-gold/60 hover:text-gold;
+  }
+
+  .btn-danger {
+    @apply btn bg-loss/15 border border-loss/40 text-loss hover:bg-loss/25;
+  }
+
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+}
