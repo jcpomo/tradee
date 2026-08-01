@@ -44,3 +44,9 @@ test('undo borra los trades del lote', async () => {
   assert.equal((await app.inject({ method: 'DELETE', url: `/api/import/batches/${batchId}`, headers: auth() })).statusCode, 204)
   assert.equal((await app.inject({ method: 'GET', url: `/api/trades?accountId=${accountId}`, headers: auth() })).json().trades.length, 0)
 })
+test('preview sin accountId devuelve 404', async () => {
+  const m = mp(csv)
+  const res = await app.inject({ method: 'POST', url: '/api/import/preview', headers: { ...auth(), ...m.headers }, payload: m.body })
+  assert.equal(res.statusCode, 404)
+  assert.equal(res.json().error, 'no_account')
+})

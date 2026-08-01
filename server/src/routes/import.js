@@ -4,7 +4,9 @@ import { parseOrders } from '../import/parseOrders.js'
 import { buildTrades } from '../import/buildTrades.js'
 
 async function need(req, reply) {
-  const acc = await resolveAccount(req.userId, req.query.accountId)
+  const accountId = req.query.accountId
+  if (!accountId) { reply.code(404).send({ error: 'no_account', message: 'Falta accountId' }); return null }
+  const acc = await resolveAccount(req.userId, accountId)
   if (!acc) { reply.code(404).send({ error: 'no_account', message: 'Cuenta no encontrada' }); return null }
   return acc
 }
