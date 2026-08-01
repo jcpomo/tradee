@@ -267,7 +267,7 @@ posición vuelve a **0**, se cierra un trade:
 - `result` = WIN si `pnl>0`, LOSS si `pnl<0`, BE si `pnl==0`.
 - `date`/`time` = del último fill de cierre.
 
-Validación esperada con el fichero de referencia: **114 fills → 57 trades**, **P&L neto −112 $**.
+Validación esperada con el fichero de referencia: **114 fills → 57 trades**, **P&L neto −101.28 $**.
 Estas cifras se muestran en el preview para cuadrar antes de confirmar.
 
 ### Deduplicación

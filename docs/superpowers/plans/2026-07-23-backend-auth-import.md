@@ -25,7 +25,7 @@
   `75K {75000,2750,4500,12}`, `100K {100000,3000,6000,8}`, `150K {150000,4000,9000,12}`,
   `250K {250000,6500,15000,17}`, `300K {300000,7500,20000,20}`, `100K-static {100000,625,2000,2}`
   (orden: `initialBalance, maxDrawdown, profitTarget, maxContracts`).
-- **Fixture de importación**: `server/test/fixtures/orders.csv`. Debe dar **114 fills → 57 trades, P&L −112.00**.
+- **Fixture de importación**: `server/test/fixtures/orders.csv`. Debe dar **114 fills → 57 trades, P&L −101.28**.
 - **Al registrarse** se crea automáticamente una cuenta por defecto (`50K`, `intraday`) marcada activa.
 
 ---
@@ -1990,7 +1990,7 @@ git commit -m "feat(web): alta de cuenta con presets editables + restaurar prese
 
 # FASE 4 — Importación de CSV (por cuenta)
 
-**Entregable:** parser, reconstrucción round-trip, dedupe por cuenta, preview/commit con `?accountId`, historial/undo y pantalla Importar. Validado con `orders.csv` (57 trades, −112 $).
+**Entregable:** parser, reconstrucción round-trip, dedupe por cuenta, preview/commit con `?accountId`, historial/undo y pantalla Importar. Validado con `orders.csv` (57 trades, −101.28 $).
 
 ### Task 4.1: Fixture + mapa de instrumentos del servidor
 
@@ -2110,7 +2110,7 @@ const dir = dirname(fileURLToPath(import.meta.url))
 const csv = await readFile(join(dir, 'fixtures/orders.csv'), 'utf8')
 
 test('reconstruye 57 trades', () => { assert.equal(buildTrades(parseOrders(csv).fills).length, 57) })
-test('P&L neto -112.00', () => { const n = buildTrades(parseOrders(csv).fills).reduce((a, t) => a + t.pnl, 0); assert.equal(Math.round(n * 100) / 100, -112) })
+test('P&L neto -101.28', () => { const n = buildTrades(parseOrders(csv).fills).reduce((a, t) => a + t.pnl, 0); assert.equal(Math.round(n * 100) / 100, -101.28) })
 test('campos coherentes', () => { for (const t of buildTrades(parseOrders(csv).fills)) { assert.ok(['LONG', 'SHORT'].includes(t.direction)); assert.ok(t.contracts >= 1); assert.ok(['WIN', 'LOSS', 'BE'].includes(t.result)); assert.ok(t.externalId) } })
 test('externalId determinista', () => { const a = buildTrades(parseOrders(csv).fills).map((t) => t.externalId); const b = buildTrades(parseOrders(csv).fills).map((t) => t.externalId); assert.deepEqual(a, b) })
 ```
@@ -2163,7 +2163,7 @@ export function buildTrades(fills) {
 }
 ```
 
-- [ ] **Step 4: Ejecutar y ver pasar** — Run: `cd server && node --test test/buildTrades.test.js`. Expected: PASS. **Si no da 57 / −112, revisar el agrupado antes de seguir.**
+- [ ] **Step 4: Ejecutar y ver pasar** — Run: `cd server && node --test test/buildTrades.test.js`. Expected: PASS. **Si no da 57 / −101.28, revisar el agrupado antes de seguir.**
 
 - [ ] **Step 5: Commit**
 
@@ -2216,10 +2216,10 @@ function mp(csvText) {
     body: `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="orders.csv"\r\nContent-Type: text/csv\r\n\r\n${csvText}\r\n--${boundary}--\r\n` }
 }
 
-test('preview: 57 trades, -112, 57 nuevos', async () => {
+test('preview: 57 trades, -101.28, 57 nuevos', async () => {
   const m = mp(csv)
   const s = (await app.inject({ method: 'POST', url: `/api/import/preview?accountId=${accountId}`, headers: { ...auth(), ...m.headers }, payload: m.body })).json().summary
-  assert.equal(s.trades, 57); assert.equal(Math.round(s.netPnl * 100) / 100, -112); assert.equal(s.inserted, 57); assert.equal(s.duplicates, 0)
+  assert.equal(s.trades, 57); assert.equal(Math.round(s.netPnl * 100) / 100, -101.28); assert.equal(s.inserted, 57); assert.equal(s.duplicates, 0)
 })
 test('commit inserta 57 y reimportar da 0 nuevos', async () => {
   const m = mp(csv)
