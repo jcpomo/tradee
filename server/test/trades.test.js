@@ -30,3 +30,6 @@ test('export.csv', async () => {
 test('accountId ajeno da 404', async () => {
   assert.equal((await app.inject({ method: 'GET', url: `/api/trades?accountId=00000000-0000-0000-0000-000000000000`, headers: auth() })).statusCode, 404)
 })
+test('falta accountId da 404', async () => {
+  assert.equal((await app.inject({ method: 'GET', url: '/api/trades', headers: auth() })).statusCode, 404)
+})

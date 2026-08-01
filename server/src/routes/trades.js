@@ -21,7 +21,9 @@ const tradeBody = {
 }
 // helper: exige cuenta válida; devuelve fila o manda 404
 async function need(req, reply) {
-  const acc = await resolveAccount(req.userId, req.query.accountId)
+  const accountId = req.query.accountId
+  if (!accountId) { reply.code(404).send({ error: 'no_account', message: 'Falta accountId' }); return null }
+  const acc = await resolveAccount(req.userId, accountId)
   if (!acc) { reply.code(404).send({ error: 'no_account', message: 'Cuenta no encontrada' }); return null }
   return acc
 }
@@ -54,7 +56,7 @@ export async function tradesRoutes(app) {
     if (!entries.length) return reply.code(400).send({ error: 'empty', message: 'Nada que actualizar' })
     const sets = entries.map((f, i) => `${f}=$${i + 3}`).join(', ')
     const vals = entries.map((f) => req.body[f])
-    // join a accounts para validar propiedad por user_id
+    // propiedad validada por user_id directamente sobre trades
     const r = await query(
       `UPDATE trades SET ${sets} WHERE id=$1 AND user_id=$2 RETURNING *`,
       [req.params.id, req.userId, ...vals],
