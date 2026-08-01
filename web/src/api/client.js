@@ -5,7 +5,8 @@ export const getAccessToken = () => accessToken
 export const API_BASE = API_URL
 
 async function raw(path, { method = 'GET', body, auth = true } = {}) {
-  const headers = { 'Content-Type': 'application/json' }
+  const headers = {}
+  if (body !== undefined) headers['Content-Type'] = 'application/json'
   if (auth && accessToken) headers.Authorization = `Bearer ${accessToken}`
   return fetch(`${API_URL}${path}`, { method, headers, credentials: 'include', body: body !== undefined ? JSON.stringify(body) : undefined })
 }

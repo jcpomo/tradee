@@ -6,6 +6,7 @@ import TradeJournal from './components/TradeJournal'
 import FloorTracker from './components/FloorTracker'
 import ReferenceGuide from './components/ReferenceGuide'
 import Settings from './components/Settings'
+import NewAccountModal from './components/NewAccountModal'
 import { useAuth } from './store/useAuth'
 import { useStore } from './store/useStore'
 import { useAccounts } from './store/useAccounts'
@@ -85,8 +86,7 @@ export default function App() {
         onNewAccount={() => setShowNewAccount(true)}
       />
 
-      {/* TODO (Task 3.3): reemplazar por <NewAccountModal onClose={() => setShowNewAccount(false)} /> */}
-      {showNewAccount && null}
+      {showNewAccount && <NewAccountModal onClose={() => setShowNewAccount(false)} />}
 
       <main className="mx-auto max-w-7xl px-4 py-4 pb-24 md:pb-8">
         {legacyDataAvailable && (

@@ -5,6 +5,7 @@ import { Section, Field, NoteBox, Toggle } from './ui'
 import { CALC_INSTRUMENTS, INSTRUMENTS } from '../data/instruments'
 import { fmtUSD, todayISO } from '../utils/calculations'
 import { API_BASE, getAccessToken } from '../api/client'
+import { resetPreset } from '../api/endpoints'
 
 const RR_OPTIONS = [1, 1.5, 2, 2.5, 3, 4, 5]
 const DRAWDOWN_MODES = [
@@ -22,10 +23,25 @@ export default function Settings() {
   const settings = a.settings
 
   const [msg, setMsg] = useState(null)
+  const [restoring, setRestoring] = useState(false)
 
   const flash = (tone, text) => {
     setMsg({ tone, text })
     setTimeout(() => setMsg(null), 3500)
+  }
+
+  const doResetPreset = async () => {
+    if (!account?.sizeLabel) return
+    setRestoring(true)
+    try {
+      const { preset } = await resetPreset(account.id)
+      updateSettings(preset)
+      flash('green', `Preset ${account.sizeLabel} restaurado`)
+    } catch (err) {
+      flash('red', `No se pudo restaurar el preset: ${err.message}`)
+    } finally {
+      setRestoring(false)
+    }
   }
 
   const numberField = (key, { min, max, step = 1 } = {}) => (
@@ -114,6 +130,22 @@ export default function Settings() {
               onChange={(v) => updateSettings({ drawdownMode: v })}
               size="sm"
             />
+          </Field>
+          <Field
+            label="Preset de tamaño"
+            hint={account?.sizeLabel ? 'Restaura balance, drawdown, objetivo y contratos a los valores originales del preset' : 'Esta cuenta no tiene un preset asociado'}
+          >
+            <div className="flex items-center gap-2">
+              <span className="input flex items-center font-semibold text-slate-100">{account?.sizeLabel ?? '—'}</span>
+              <button
+                type="button"
+                className="btn-primary whitespace-nowrap"
+                onClick={doResetPreset}
+                disabled={!account?.sizeLabel || restoring}
+              >
+                {restoring ? '...' : 'Restaurar preset'}
+              </button>
+            </div>
           </Field>
         </div>
 
