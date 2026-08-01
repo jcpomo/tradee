@@ -13,3 +13,12 @@ test('runMigrations aplica 0001 y es idempotente', async () => {
   const ext = await query("SELECT 1 FROM pg_extension WHERE extname='pgcrypto'")
   assert.equal(ext.rowCount, 1)
 })
+
+test('las tablas existen tras migrar', async () => {
+  await runMigrations()
+  const r = await query(
+    "SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename = ANY($1)",
+    [['users', 'accounts', 'trades', 'daily_records', 'import_batches', 'refresh_tokens']],
+  )
+  assert.equal(r.rowCount, 6)
+})
