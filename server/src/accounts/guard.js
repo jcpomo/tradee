@@ -5,12 +5,12 @@ export function rowToAccount(r) {
   return {
     id: r.id, name: r.name, drawdownMode: r.drawdown_mode, sizeLabel: r.size_label,
     initialBalance: Number(r.initial_balance), maxDrawdown: Number(r.max_drawdown),
-    profitTarget: Number(r.profit_target), maxContracts: r.max_contracts,
-    evalDays: r.eval_days, startDate: d(r.start_date),
+    profitTarget: Number(r.profit_target), maxContracts: Number(r.max_contracts),
+    evalDays: Number(r.eval_days), startDate: d(r.start_date),
     currentBalance: Number(r.current_balance), peakBalance: Number(r.peak_balance),
     riskPerTrade: Number(r.risk_per_trade), dailyStopLimit: Number(r.daily_stop_limit),
-    minRR: Number(r.min_rr), maxTradesPerDay: r.max_trades_per_day,
-    defaultContracts: r.default_contracts, defaultInstrument: r.default_instrument,
+    minRR: Number(r.min_rr), maxTradesPerDay: Number(r.max_trades_per_day),
+    defaultContracts: Number(r.default_contracts), defaultInstrument: r.default_instrument,
     accountKind: r.account_kind,
   }
 }
