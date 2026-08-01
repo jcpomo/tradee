@@ -43,8 +43,8 @@ export async function authRoutes(app) {
       await client.query('COMMIT')
     } catch (e) {
       await client.query('ROLLBACK')
+      // El finally libera el client una sola vez; no liberar aquí (doble release lanza).
       if (e.code === '23505') {
-        client.release()
         return reply.code(409).send({ error: 'email_taken', message: 'Ese email ya está registrado' })
       }
       throw e
