@@ -10,7 +10,7 @@ export const SCREENS = [
   { id: 'settings', label: 'Configuración', icon: '⚙', short: 'Ajustes' },
 ]
 
-export default function Navbar({ screen, onChange }) {
+export default function Navbar({ screen, onChange, userEmail, onLogout }) {
   const a = useAccount()
   const marginTone =
     a.margin < 300 ? 'text-loss' : a.margin < 800 ? 'text-gold' : 'text-win'
@@ -57,6 +57,7 @@ export default function Navbar({ screen, onChange }) {
                   {fmtSignedUSD(a.dayStats.pnl)}
                 </p>
               </div>
+              {userEmail && <button onClick={onLogout} title={userEmail} className="text-[11px] font-semibold text-muted hover:text-loss">Salir</button>}
             </div>
           </div>
         </div>

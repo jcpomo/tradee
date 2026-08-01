@@ -6,6 +6,8 @@ import TradeJournal from './components/TradeJournal'
 import FloorTracker from './components/FloorTracker'
 import ReferenceGuide from './components/ReferenceGuide'
 import Settings from './components/Settings'
+import { useAuth } from './store/useAuth'
+import AuthScreen from './components/AuthScreen'
 
 const VALID = SCREENS.map((s) => s.id)
 
@@ -30,9 +32,22 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
 
+  const authStatus = useAuth((s) => s.status)
+  const bootstrap = useAuth((s) => s.bootstrap)
+  const userEmail = useAuth((s) => s.user?.email)
+  const logout = useAuth((s) => s.logout)
+  useEffect(() => { bootstrap() }, [bootstrap])
+  if (authStatus === 'loading') return <div className="min-h-screen flex items-center justify-center text-muted">Cargando…</div>
+  if (authStatus === 'anonymous') return <AuthScreen />
+
   return (
     <div className="min-h-screen bg-bg">
-      <Navbar screen={screen} onChange={setScreen} />
+      <Navbar
+        screen={screen}
+        onChange={setScreen}
+        userEmail={userEmail}
+        onLogout={logout}
+      />
 
       <main className="mx-auto max-w-7xl px-4 py-4 pb-24 md:pb-8">
         {screen === 'dashboard' && <Dashboard onNavigate={setScreen} />}
