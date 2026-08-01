@@ -4,6 +4,7 @@ import cookie from '@fastify/cookie'
 import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
 import rateLimit from '@fastify/rate-limit'
+import multipart from '@fastify/multipart'
 import { config } from './config.js'
 import { authRoutes } from './auth/routes.js'
 import { requireAuth } from './auth/requireAuth.js'
@@ -11,6 +12,7 @@ import { stateRoutes } from './routes/state.js'
 import { tradesRoutes } from './routes/trades.js'
 import { dailyRecordsRoutes } from './routes/dailyRecords.js'
 import { accountsRoutes } from './routes/accounts.js'
+import { importRoutes } from './routes/import.js'
 
 export function buildApp() {
   const app = Fastify({ logger: false })
@@ -19,6 +21,7 @@ export function buildApp() {
   app.register(cookie)
   app.register(jwt, { secret: config.jwtAccessSecret })
   app.register(jwt, { secret: config.jwtRefreshSecret, namespace: 'refresh', jwtVerify: 'jwtRefreshVerify', jwtSign: 'jwtRefreshSign' })
+  app.register(multipart, { limits: { fileSize: 5 * 1024 * 1024 } })
   app.decorate('jwtRefresh', {
     sign: (payload, opts) => app.jwt.refresh.sign(payload, opts),
     verify: (token) => app.jwt.refresh.verify(token),
@@ -33,6 +36,7 @@ export function buildApp() {
     await tradesRoutes(api)
     await dailyRecordsRoutes(api)
     await accountsRoutes(api)
+    await importRoutes(api)
   }, { prefix: '/api' })
   app.get('/health', async () => ({ status: 'ok' }))
   return app
