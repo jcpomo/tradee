@@ -4,6 +4,7 @@ import Dashboard from './components/Dashboard'
 import TradeCalculator from './components/TradeCalculator'
 import TradeJournal from './components/TradeJournal'
 import FloorTracker from './components/FloorTracker'
+import ImportTrades from './components/ImportTrades'
 import ReferenceGuide from './components/ReferenceGuide'
 import Settings from './components/Settings'
 import NewAccountModal from './components/NewAccountModal'
@@ -108,6 +109,7 @@ export default function App() {
         {screen === 'calculator' && <TradeCalculator onNavigate={setScreen} />}
         {screen === 'journal' && <TradeJournal onNavigate={setScreen} />}
         {screen === 'floor' && <FloorTracker onNavigate={setScreen} />}
+        {screen === 'import' && <ImportTrades />}
         {screen === 'reference' && <ReferenceGuide onNavigate={setScreen} />}
         {screen === 'settings' && <Settings onNavigate={setScreen} />}
       </main>

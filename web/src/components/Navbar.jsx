@@ -7,6 +7,7 @@ export const SCREENS = [
   { id: 'calculator', label: 'Calculadora', icon: '⊞', short: 'Calc' },
   { id: 'journal', label: 'Diario', icon: '≡', short: 'Diario' },
   { id: 'floor', label: 'Suelo', icon: '⌷', short: 'Suelo' },
+  { id: 'import', label: 'Importar', icon: '⇪', short: 'Import' },
   { id: 'reference', label: 'Referencia', icon: '☰', short: 'Ref' },
   { id: 'settings', label: 'Configuración', icon: '⚙', short: 'Ajustes' },
 ]
