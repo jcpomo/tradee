@@ -24,3 +24,15 @@ test('login correcto / incorrecto / duplicado', async () => {
   assert.equal((await app.inject({ method: 'POST', url: '/auth/login', payload: { email: 'a@b.com', password: 'nope12345' } })).statusCode, 401)
   assert.equal((await app.inject({ method: 'POST', url: '/auth/register', payload: { email: 'A@b.com', password: 'password123' } })).statusCode, 409)
 })
+
+test('refresh, me y logout', async () => {
+  const reg = await app.inject({ method: 'POST', url: '/auth/register', payload: { email: 'a@b.com', password: 'password123' } })
+  const cookie = reg.headers['set-cookie']; const token = reg.json().accessToken
+  assert.equal((await app.inject({ method: 'POST', url: '/auth/refresh', headers: { cookie } })).statusCode, 200)
+  const me = await app.inject({ method: 'GET', url: '/auth/me', headers: { authorization: `Bearer ${token}` } })
+  assert.equal(me.json().user.email, 'a@b.com')
+  assert.ok(me.json().activeAccountId)
+  assert.equal((await app.inject({ method: 'GET', url: '/auth/me' })).statusCode, 401)
+  assert.equal((await app.inject({ method: 'POST', url: '/auth/logout', headers: { cookie } })).statusCode, 204)
+  assert.equal((await app.inject({ method: 'POST', url: '/auth/refresh', headers: { cookie } })).statusCode, 401)
+})
