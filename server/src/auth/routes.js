@@ -66,10 +66,12 @@ export async function authRoutes(app) {
     let payload
     try { payload = await app.jwtRefresh.verify(token); if (payload.typ !== 'refresh') throw 0 }
     catch { return reply.code(401).send({ error: 'invalid_refresh', message: 'Sesión caducada' }) }
-    const row = await query('SELECT revoked,expires_at FROM refresh_tokens WHERE jti=$1', [payload.jti])
-    if (!row.rowCount || row.rows[0].revoked || new Date(row.rows[0].expires_at) < new Date())
+    const revoked = await query(
+      'UPDATE refresh_tokens SET revoked=true WHERE jti=$1 AND revoked=false AND expires_at > now() RETURNING user_id',
+      [payload.jti],
+    )
+    if (!revoked.rowCount)
       return reply.code(401).send({ error: 'invalid_refresh', message: 'Sesión caducada' })
-    await query('UPDATE refresh_tokens SET revoked=true WHERE jti=$1', [payload.jti])
     const accessToken = signAccess(app, payload.sub)
     const { token: nr, jti, expiresAt } = signRefresh(app, payload.sub)
     await query('INSERT INTO refresh_tokens(jti,user_id,expires_at) VALUES ($1,$2,$3)', [jti, payload.sub, expiresAt])
@@ -84,8 +86,9 @@ export async function authRoutes(app) {
     reply.code(204).send()
   })
 
-  app.get('/auth/me', { preHandler: requireAuth }, async (req) => {
+  app.get('/auth/me', { preHandler: requireAuth }, async (req, reply) => {
     const r = await query('SELECT id,email,active_account_id FROM users WHERE id=$1', [req.userId])
+    if (!r.rowCount) return reply.code(401).send({ error: 'unauthorized', message: 'Sesión no válida' })
     return { user: { id: r.rows[0].id, email: r.rows[0].email }, activeAccountId: r.rows[0].active_account_id }
   })
 }
