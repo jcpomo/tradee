@@ -240,7 +240,7 @@ See [docs/DEPLOY.md](./docs/DEPLOY.md) for complete production setup.
 - All passwords hashed with Argon2
 - JWT tokens with short expiration (15 min access, 7 day refresh)
 - CORS limited to configured origin
-- Rate limiting active (100 req/10 min)
+- Rate limiting active on `/auth/*` only (max 20 req/min, e.g. login/register); no global `/api` limit yet — recommended future hardening, since `/api/import/preview` parses CSVs up to 5MB
 - Helmet headers for XSS/clickjacking protection
 - In production, HTTPS enforced via Traefik/Dokploy
 

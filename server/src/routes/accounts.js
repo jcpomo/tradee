@@ -47,7 +47,11 @@ export async function accountsRoutes(app) {
   })
 
   app.patch('/accounts/:id', async (req, reply) => {
-    const entries = Object.entries(req.body || {}).filter(([k]) => EDITABLE[k])
+    const body = req.body || {}
+    if ('drawdownMode' in body && !DRAWDOWN_MODES.includes(body.drawdownMode)) {
+      return reply.code(400).send({ error: 'bad_mode', message: 'Modo de drawdown no válido' })
+    }
+    const entries = Object.entries(body).filter(([k]) => EDITABLE[k])
     if (!entries.length) return reply.code(400).send({ error: 'empty', message: 'Nada que actualizar' })
     const sets = entries.map(([k], i) => `${EDITABLE[k]}=$${i + 3}`).join(', ')
     const vals = entries.map(([, v]) => v)

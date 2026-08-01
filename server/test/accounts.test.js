@@ -45,3 +45,9 @@ test('patch edita y borrar respeta que quede al menos una activa', async () => {
   assert.equal(list.json().accounts.length, 1)
   assert.ok(list.json().activeAccountId) // sigue habiendo activa
 })
+test('patch con drawdownMode inválido devuelve 400', async () => {
+  const acc = (await app.inject({ method: 'GET', url: '/api/accounts', headers: auth() })).json().accounts[0]
+  const r = await app.inject({ method: 'PATCH', url: `/api/accounts/${acc.id}`, headers: auth(), payload: { drawdownMode: 'bogus' } })
+  assert.equal(r.statusCode, 400)
+  assert.equal(r.json().error, 'bad_mode')
+})

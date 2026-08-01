@@ -69,13 +69,20 @@ export async function importRoutes(app) {
         )
       }
       if (rebuildDailyRecords) {
+        const round2 = (v) => Math.round(v * 100) / 100
         const byDay = new Map()
         for (const t of trades) byDay.set(t.date, (byDay.get(t.date) || 0) + t.pnl)
-        for (const [date, pnl] of byDay) {
+        const sortedDates = [...byDay.keys()].sort()
+        let running = Number(acc.initial_balance)
+        for (const date of sortedDates) {
+          const dayPnl = byDay.get(date)
+          const open = round2(running)
+          running += dayPnl
+          const close = round2(running)
           await client.query(
-            `INSERT INTO daily_records(account_id,user_id,date,open,close,note) VALUES ($1,$2,$3,NULL,$4,$5)
-             ON CONFLICT (account_id,date) DO UPDATE SET close=EXCLUDED.close, note=EXCLUDED.note`,
-            [acc.id, req.userId, date, Math.round(pnl * 100) / 100, `P&L importado ${Math.round(pnl * 100) / 100}`],
+            `INSERT INTO daily_records(account_id,user_id,date,open,close,note) VALUES ($1,$2,$3,$4,$5,$6)
+             ON CONFLICT (account_id,date) DO UPDATE SET open=EXCLUDED.open, close=EXCLUDED.close, note=EXCLUDED.note`,
+            [acc.id, req.userId, date, open, close, `P&L importado ${round2(dayPnl)}`],
           )
         }
       }

@@ -188,7 +188,7 @@ Before going live, verify:
 - [ ] **Unique Secrets**: All `JWT_*` and `POSTGRES_PASSWORD` generated with `openssl rand -hex 32`
 - [ ] **CORS Configured**: `WEB_ORIGIN` set to actual frontend domain, not localhost
 - [ ] **HTTPS Enabled**: Traefik configured, valid certificates in place
-- [ ] **Rate Limiting Active**: Server has `@fastify/rate-limit` enabled (default: 100 req/10 min)
+- [ ] **Rate Limiting Scope Understood**: `@fastify/rate-limit` is currently applied only to `/auth/*` (max 20 req/min, e.g. login/register brute-force protection). There is no global rate limit on `/api/*`. Consider adding one before going live, especially since `/api/import/preview` accepts and parses CSVs up to 5MB per request.
 - [ ] **Dependencies Updated**: Run `npm audit fix` in both `server/` and `web/` before build
 - [ ] **Database Backups**: Scheduled and tested
 - [ ] **Health Checks**: `/health` endpoint responds on API domain

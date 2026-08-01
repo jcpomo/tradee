@@ -44,6 +44,21 @@ test('undo borra los trades del lote', async () => {
   assert.equal((await app.inject({ method: 'DELETE', url: `/api/import/batches/${batchId}`, headers: auth() })).statusCode, 204)
   assert.equal((await app.inject({ method: 'GET', url: `/api/trades?accountId=${accountId}`, headers: auth() })).json().trades.length, 0)
 })
+test('commit con rebuildDailyRecords reconstruye balances corridos (no P&L diario)', async () => {
+  const m = mp(csv)
+  await app.inject({ method: 'POST', url: `/api/import/preview?accountId=${accountId}`, headers: { ...auth(), ...m.headers }, payload: m.body })
+  const c = await app.inject({ method: 'POST', url: `/api/import/commit?accountId=${accountId}`, headers: auth(), payload: { filename: 'orders.csv', rebuildDailyRecords: true } })
+  assert.equal(c.json().insertedCount, 57)
+  const records = (await app.inject({ method: 'GET', url: `/api/daily-records?accountId=${accountId}`, headers: auth() })).json().records
+  assert.ok(records.length > 0)
+  // Los balances deben quedar en el rango de la cuenta (~50k), no ser P&L diarios pequeños como -101.28
+  for (const r of records) {
+    assert.ok(r.close > 10000, `close ${r.close} debería ser un balance, no un P&L diario`)
+    assert.ok(r.open == null || r.open > 10000, `open ${r.open} debería ser un balance, no un P&L diario`)
+  }
+  const last = records[records.length - 1]
+  assert.equal(Math.round(last.close * 100) / 100, Math.round((50000 - 101.28) * 100) / 100)
+})
 test('preview sin accountId devuelve 404', async () => {
   const m = mp(csv)
   const res = await app.inject({ method: 'POST', url: '/api/import/preview', headers: { ...auth(), ...m.headers }, payload: m.body })
