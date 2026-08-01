@@ -8,6 +8,7 @@ import ReferenceGuide from './components/ReferenceGuide'
 import Settings from './components/Settings'
 import { useAuth } from './store/useAuth'
 import { useStore } from './store/useStore'
+import { useAccounts } from './store/useAccounts'
 import AuthScreen from './components/AuthScreen'
 import { NoteBox } from './components/ui'
 import { hasLegacyData, migrateLegacyData } from './api/migrateLocal'
@@ -20,6 +21,7 @@ export default function App() {
     return VALID.includes(hash) ? hash : 'dashboard'
   })
   const [legacyDataAvailable, setLegacyDataAvailable] = useState(false)
+  const [showNewAccount, setShowNewAccount] = useState(false)
 
   // El hash permite recargar la página y volver a la misma pantalla
   useEffect(() => {
@@ -47,6 +49,7 @@ export default function App() {
   const activeAccountId = useAuth((s) => s.activeAccountId)
   const hydrate = useStore((s) => s.hydrate)
   const hydrated = useStore((s) => s.hydrated)
+  const loadAccounts = useAccounts((s) => s.load)
 
   const handleMigrate = async () => {
     if (!activeAccountId) return
@@ -63,6 +66,9 @@ export default function App() {
   useEffect(() => {
     if (authStatus === 'authenticated' && activeAccountId && !hydrated) hydrate(activeAccountId)
   }, [authStatus, activeAccountId, hydrated, hydrate])
+  useEffect(() => {
+    if (authStatus === 'authenticated' && hydrated) loadAccounts()
+  }, [authStatus, hydrated, loadAccounts])
   if (authStatus === 'loading') return <div className="min-h-screen flex items-center justify-center text-muted">Cargando…</div>
   if (authStatus === 'anonymous') return <AuthScreen />
   if (authStatus === 'authenticated' && !hydrated) {
@@ -76,7 +82,11 @@ export default function App() {
         onChange={setScreen}
         userEmail={userEmail}
         onLogout={logout}
+        onNewAccount={() => setShowNewAccount(true)}
       />
+
+      {/* TODO (Task 3.3): reemplazar por <NewAccountModal onClose={() => setShowNewAccount(false)} /> */}
+      {showNewAccount && null}
 
       <main className="mx-auto max-w-7xl px-4 py-4 pb-24 md:pb-8">
         {legacyDataAvailable && (
