@@ -110,6 +110,7 @@ export default function ImportTrades() {
 
   const summary = preview?.summary
   const proposed = preview?.proposed || []
+  const totalCommission = proposed.reduce((a, t) => a + (t.commission || 0), 0)
 
   return (
     <div className="space-y-4">
@@ -134,7 +135,7 @@ export default function ImportTrades() {
           <p className="text-sm font-semibold text-slate-200">
             {file ? file.name : 'Arrastra tu CSV aquí o haz clic para elegir un archivo'}
           </p>
-          <p className="text-xs text-muted">Columnas esperadas: name, order_id, symbol, mov_time, mov_type, exec_qty, price_done…</p>
+          <p className="text-xs text-muted">Detecta automáticamente WealthCharts (export de órdenes) y Tradovate (export de <b>Fills</b>).</p>
           <input ref={inputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={onInputChange} />
         </div>
 
@@ -142,6 +143,21 @@ export default function ImportTrades() {
 
         {summary && (
           <div className="mt-4 space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              {summary.platform && (
+                <Badge tone={summary.platform === 'Tradovate' ? 'blue' : 'green'}>
+                  Detectado: {summary.platform}
+                </Badge>
+              )}
+              {totalCommission > 0 ? (
+                <span className="text-xs text-muted">
+                  P&L <b className="text-slate-200">neto</b> — comisiones incluidas ({fmtSignedUSD(-totalCommission, 2)})
+                </span>
+              ) : (
+                <span className="text-xs text-muted">P&L según el broker (ya neto, con comisiones)</span>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {[
                 { l: 'Fills', v: summary.fills },
