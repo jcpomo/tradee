@@ -1479,7 +1479,7 @@ export async function dailyRecordsRoutes(app) {
 
 - [ ] **Step 5: Registrar en `app.js`** — `await dailyRecordsRoutes(api)`; import correspondiente.
 
-- [ ] **Step 6: Ejecutar toda la suite** — Run: `cd server && node --test`. Expected: PASS. Parar: `docker stop apex-pg-test`.
+- [ ] **Step 6: Ejecutar toda la suite** — Run: `cd server && npm test`. Expected: PASS. Parar: `docker stop apex-pg-test`.
 
 - [ ] **Step 7: Commit**
 
@@ -2356,7 +2356,7 @@ export async function importRoutes(app) {
 
 - [ ] **Step 5: Registrar multipart + rutas en `app.js`** — `import multipart from '@fastify/multipart'`; `app.register(multipart, { limits: { fileSize: 5 * 1024 * 1024 } })` antes del bloque `/api`; `await importRoutes(api)` dentro; import de `importRoutes`.
 
-- [ ] **Step 6: Ejecutar suite completa** — Run: `cd server && node --test`. Expected: PASS. Parar Postgres.
+- [ ] **Step 6: Ejecutar suite completa** — Run: `cd server && npm test`. Expected: PASS. Parar Postgres.
 
 - [ ] **Step 7: Commit**
 
@@ -2511,7 +2511,7 @@ Contenido: desplegar en Dokploy los 3 servicios o `docker-compose.prod.yml`; var
 
 ```bash
 docker run --rm -d --name apex-pg-test -e POSTGRES_USER=apex -e POSTGRES_PASSWORD=apex -e POSTGRES_DB=apex -p 5432:5432 postgres:16 && sleep 3
-cd server && node --test
+cd server && npm test
 docker stop apex-pg-test
 cd /Users/pomo/Documents/App/trade/apex-dashboard && docker compose up -d --build && sleep 10 && curl -s http://localhost:3001/health && docker compose down
 ```

@@ -1,8 +1,12 @@
-import { test, after } from 'node:test'
+import { test, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import { runMigrations } from '../src/migrate.js'
 import { query, closePool } from '../src/db.js'
 
+// Este fichero verifica el runner sobre una BD "fresca". Como toda la suite
+// comparte una única Postgres, reseteamos el esquema para no depender de si
+// otro fichero ya migró antes (independencia de orden).
+before(() => query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;'))
 after(() => closePool())
 
 test('runMigrations aplica 0001 y es idempotente', async () => {
