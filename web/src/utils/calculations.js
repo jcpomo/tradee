@@ -1,4 +1,4 @@
-import { INSTRUMENTS } from '../data/instruments'
+import { INSTRUMENTS } from '../data/instruments.js'
 
 const MS_DAY = 86400000
 
@@ -11,6 +11,21 @@ export const num = (v, fallback = 0) => {
 
 // Suelo actual = Peak Balance − drawdown máximo
 export const calcFloor = (peakBalance, maxDrawdown) => num(peakBalance) - num(maxDrawdown)
+
+// Suelo según el modo de drawdown. safetyNet = initialBalance + 100 (tope del trailing).
+export function calcFloorByMode({ mode, peakBalance, currentBalance, initialBalance, maxDrawdown, dailyCloses = [] }) {
+  const dd = num(maxDrawdown)
+  const init = num(initialBalance)
+  if (mode === 'static') return init - dd
+  const cap = init + 100
+  if (mode === 'eod') {
+    const peakEod = Math.max(init, ...dailyCloses.map(num))
+    return Math.min(peakEod - dd, cap)
+  }
+  // intraday (por defecto): el peak incluye el balance vivo
+  const peak = Math.max(num(peakBalance), num(currentBalance), init)
+  return Math.min(peak - dd, cap)
+}
 
 // Margen disponible = Balance actual − Suelo actual
 export const calcMargin = (currentBalance, floor) => num(currentBalance) - num(floor)
