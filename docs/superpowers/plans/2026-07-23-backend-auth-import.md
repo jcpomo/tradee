@@ -124,7 +124,7 @@ git commit -m "chore: monorepo — mover frontend a web/ e iniciar git"
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
     "migrate": "node src/migrate.js",
-    "test": "node --test test/"
+    "test": "node --test"
   },
   "dependencies": {
     "@fastify/cookie": "^9.3.1",
@@ -1479,7 +1479,7 @@ export async function dailyRecordsRoutes(app) {
 
 - [ ] **Step 5: Registrar en `app.js`** — `await dailyRecordsRoutes(api)`; import correspondiente.
 
-- [ ] **Step 6: Ejecutar toda la suite** — Run: `cd server && node --test test/`. Expected: PASS. Parar: `docker stop apex-pg-test`.
+- [ ] **Step 6: Ejecutar toda la suite** — Run: `cd server && node --test`. Expected: PASS. Parar: `docker stop apex-pg-test`.
 
 - [ ] **Step 7: Commit**
 
@@ -2356,7 +2356,7 @@ export async function importRoutes(app) {
 
 - [ ] **Step 5: Registrar multipart + rutas en `app.js`** — `import multipart from '@fastify/multipart'`; `app.register(multipart, { limits: { fileSize: 5 * 1024 * 1024 } })` antes del bloque `/api`; `await importRoutes(api)` dentro; import de `importRoutes`.
 
-- [ ] **Step 6: Ejecutar suite completa** — Run: `cd server && node --test test/`. Expected: PASS. Parar Postgres.
+- [ ] **Step 6: Ejecutar suite completa** — Run: `cd server && node --test`. Expected: PASS. Parar Postgres.
 
 - [ ] **Step 7: Commit**
 
@@ -2505,13 +2505,13 @@ git commit -m "feat: imagen web de producción (Nginx) + compose prod"
 
 Contenido: desplegar en Dokploy los 3 servicios o `docker-compose.prod.yml`; variables obligatorias (`POSTGRES_*`, `JWT_*` con `openssl rand -hex 32`, `WEB_ORIGIN`=dominio front, `WEB_API_URL`=dominio API); TLS/Traefik los pone Dokploy; el server migra al arrancar; **backup de Postgres** programado; en prod `NODE_ENV=production` activa cookie `Secure` (requiere HTTPS); checklist de seguridad (secretos únicos, CORS al dominio real, rate-limit, deps actualizadas).
 
-- [ ] **Step 2: `README.md`** — monorepo (`web/`+`server/`), arranque dev (`cp .env.example .env && docker compose up`), URLs (:5173 / :3001), tests server (`cd server && node --test test/`), enlaces a spec/plan y `docs/DEPLOY.md`.
+- [ ] **Step 2: `README.md`** — monorepo (`web/`+`server/`), arranque dev (`cp .env.example .env && docker compose up`), URLs (:5173 / :3001), tests server (`cd server && node --test`), enlaces a spec/plan y `docs/DEPLOY.md`.
 
 - [ ] **Step 3: Verificación final**
 
 ```bash
 docker run --rm -d --name apex-pg-test -e POSTGRES_USER=apex -e POSTGRES_PASSWORD=apex -e POSTGRES_DB=apex -p 5432:5432 postgres:16 && sleep 3
-cd server && node --test test/
+cd server && node --test
 docker stop apex-pg-test
 cd /Users/pomo/Documents/App/trade/apex-dashboard && docker compose up -d --build && sleep 10 && curl -s http://localhost:3001/health && docker compose down
 ```
