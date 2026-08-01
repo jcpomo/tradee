@@ -9,6 +9,8 @@ import Settings from './components/Settings'
 import { useAuth } from './store/useAuth'
 import { useStore } from './store/useStore'
 import AuthScreen from './components/AuthScreen'
+import { NoteBox } from './components/ui'
+import { hasLegacyData, migrateLegacyData } from './api/migrateLocal'
 
 const VALID = SCREENS.map((s) => s.id)
 
@@ -17,6 +19,7 @@ export default function App() {
     const hash = window.location.hash.replace('#', '')
     return VALID.includes(hash) ? hash : 'dashboard'
   })
+  const [legacyDataAvailable, setLegacyDataAvailable] = useState(false)
 
   // El hash permite recargar la página y volver a la misma pantalla
   useEffect(() => {
@@ -33,6 +36,10 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
 
+  useEffect(() => {
+    if (hasLegacyData()) setLegacyDataAvailable(true)
+  }, [])
+
   const authStatus = useAuth((s) => s.status)
   const bootstrap = useAuth((s) => s.bootstrap)
   const userEmail = useAuth((s) => s.user?.email)
@@ -40,6 +47,18 @@ export default function App() {
   const activeAccountId = useAuth((s) => s.activeAccountId)
   const hydrate = useStore((s) => s.hydrate)
   const hydrated = useStore((s) => s.hydrated)
+
+  const handleMigrate = async () => {
+    if (!activeAccountId) return
+    try {
+      await migrateLegacyData(activeAccountId)
+      await hydrate(activeAccountId)
+      setLegacyDataAvailable(false)
+    } catch (err) {
+      console.error('Migration failed:', err)
+    }
+  }
+
   useEffect(() => { bootstrap() }, [bootstrap])
   useEffect(() => {
     if (authStatus === 'authenticated' && activeAccountId && !hydrated) hydrate(activeAccountId)
@@ -60,6 +79,21 @@ export default function App() {
       />
 
       <main className="mx-auto max-w-7xl px-4 py-4 pb-24 md:pb-8">
+        {legacyDataAvailable && (
+          <div className="mb-4">
+            <NoteBox tone="blue">
+              <div className="flex items-center justify-between gap-3">
+                <span>Tienes datos anteriores disponibles. ¿Deseas importarlos a tu cuenta?</span>
+                <button
+                  onClick={handleMigrate}
+                  className="px-3 py-1.5 text-xs font-semibold bg-info hover:bg-info/80 text-black rounded-md whitespace-nowrap transition-colors"
+                >
+                  Importar mis datos anteriores
+                </button>
+              </div>
+            </NoteBox>
+          </div>
+        )}
         {screen === 'dashboard' && <Dashboard onNavigate={setScreen} />}
         {screen === 'calculator' && <TradeCalculator onNavigate={setScreen} />}
         {screen === 'journal' && <TradeJournal onNavigate={setScreen} />}
