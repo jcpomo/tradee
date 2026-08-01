@@ -57,14 +57,24 @@ export const useStore = create((set, get) => ({
     const balance = num(value)
     const peak = Math.max(balance, num(a.peakBalance), num(a.initialBalance))
     set({ account: { ...a, currentBalance: balance, peakBalance: peak } })
-    await api.patchAccount(a.id, { currentBalance: balance, peakBalance: peak })
+    try {
+      const { account } = await api.patchAccount(a.id, { currentBalance: balance, peakBalance: peak })
+      set({ account })
+    } catch {
+      await get().hydrate(a.id)
+    }
   },
 
   async setPeakBalance(value) {
     const a = get().account
     const peak = Math.max(num(value), num(a.currentBalance), num(a.initialBalance))
     set({ account: { ...a, peakBalance: peak } })
-    await api.patchAccount(a.id, { peakBalance: peak })
+    try {
+      const { account } = await api.patchAccount(a.id, { peakBalance: peak })
+      set({ account })
+    } catch {
+      await get().hydrate(a.id)
+    }
   },
 
   /* ── Configuración ────────────────────────────────────────── */
@@ -73,7 +83,12 @@ export const useStore = create((set, get) => ({
     const a = get().account
     const next = { ...a, ...patch }
     set({ account: next })
-    await api.patchAccount(a.id, patch)
+    try {
+      const { account } = await api.patchAccount(a.id, patch)
+      set({ account })
+    } catch {
+      await get().hydrate(a.id)
+    }
   },
 
   async resetSettings() {
@@ -93,7 +108,12 @@ export const useStore = create((set, get) => ({
       accountKind: DEFAULT_SETTINGS.accountType,
     }
     set({ account: { ...a, ...patch } })
-    await api.patchAccount(a.id, patch)
+    try {
+      const { account } = await api.patchAccount(a.id, patch)
+      set({ account })
+    } catch {
+      await get().hydrate(a.id)
+    }
   },
 
   /* ── Diario de trades ─────────────────────────────────────── */
