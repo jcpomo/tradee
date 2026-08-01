@@ -6,6 +6,8 @@ import helmet from '@fastify/helmet'
 import rateLimit from '@fastify/rate-limit'
 import { config } from './config.js'
 import { authRoutes } from './auth/routes.js'
+import { requireAuth } from './auth/requireAuth.js'
+import { stateRoutes } from './routes/state.js'
 
 export function buildApp() {
   const app = Fastify({ logger: false })
@@ -22,6 +24,10 @@ export function buildApp() {
     await scope.register(rateLimit, { max: 20, timeWindow: '1 minute' })
     await authRoutes(scope)
   })
+  app.register(async (api) => {
+    api.addHook('preHandler', requireAuth)
+    await stateRoutes(api)
+  }, { prefix: '/api' })
   app.get('/health', async () => ({ status: 'ok' }))
   return app
 }
