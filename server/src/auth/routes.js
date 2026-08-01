@@ -41,7 +41,14 @@ export async function authRoutes(app) {
       )).rows[0]
       await client.query('UPDATE users SET active_account_id=$2 WHERE id=$1', [user.id, acc.id])
       await client.query('COMMIT')
-    } catch (e) { await client.query('ROLLBACK'); throw e } finally { client.release() }
+    } catch (e) {
+      await client.query('ROLLBACK')
+      if (e.code === '23505') {
+        client.release()
+        return reply.code(409).send({ error: 'email_taken', message: 'Ese email ya está registrado' })
+      }
+      throw e
+    } finally { client.release() }
     await issueSession(app, reply, user, 201)
   })
 
