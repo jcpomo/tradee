@@ -1,43 +1,70 @@
 import crypto from 'node:crypto'
+import { INSTRUMENTS } from './instruments.js'
 
-function localDate(d) {
+const r2 = (v) => Math.round(v * 100) / 100
+function utcDate(d) {
   const pad = (n) => String(n).padStart(2, '0')
-  return { date: `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`, time: `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}` }
+  return { date: `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`,
+           time: `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}` }
 }
-
-function finalizeCycle(cycle) {
-  const openSide = cycle.openSide
-  const orderIds = cycle.fills.map((f) => f.orderId).sort()
-  const externalId = crypto.createHash('sha1').update(orderIds.join('|')).digest('hex')
-  const opens = cycle.fills.filter((f) => Math.sign(f.qty) === openSide)
-  const closes = cycle.fills.filter((f) => Math.sign(f.qty) === -openSide)
-  const wsum = (arr) => arr.reduce((a, f) => a + f.price * Math.abs(f.qty), 0)
-  const qsum = (arr) => arr.reduce((a, f) => a + Math.abs(f.qty), 0)
-  const pnl = closes.reduce((a, f) => a + (f.profit || 0), 0)
-  const points = closes.reduce((a, f) => a + (f.points || 0), 0)
-  const { date, time } = localDate(cycle.fills[cycle.fills.length - 1].time)
-  return {
-    externalId, date, time, instrument: cycle.instrument,
-    direction: openSide > 0 ? 'LONG' : 'SHORT', contracts: cycle.maxSize,
-    entry: qsum(opens) ? Math.round((wsum(opens) / qsum(opens)) * 100) / 100 : null,
-    exit: qsum(closes) ? Math.round((wsum(closes) / qsum(closes)) * 100) / 100 : null,
-    points: Math.round(points * 100) / 100, pnl: Math.round(pnl * 100) / 100,
-    result: pnl > 0 ? 'WIN' : pnl < 0 ? 'LOSS' : 'BE',
+function finalize(seg, trades) {
+  const openQty = seg.opens.reduce((a, o) => a + o.qty, 0)
+  const closeQty = seg.closes.reduce((a, c) => a + c.qty, 0)
+  const entry = openQty ? seg.opens.reduce((a, o) => a + o.price * o.qty, 0) / openQty : null
+  const exit = closeQty ? seg.closes.reduce((a, c) => a + c.price * c.qty, 0) / closeQty : null
+  const contracts = openQty
+  const pv = INSTRUMENTS[seg.instrument]?.pointValue ?? 0
+  const hasProfit = seg.closeProfits.some((p) => p !== null)
+  let pnl, points
+  if (hasProfit) {
+    pnl = r2(seg.closeProfits.reduce((a, p) => a + (p || 0), 0))
+    points = r2(seg.closePoints.reduce((a, p) => a + (p || 0), 0))
+  } else {
+    const gross = (exit - entry) * seg.side * pv * contracts
+    pnl = r2(gross - seg.commission)
+    points = r2((exit - entry) * seg.side * contracts)
   }
+  const externalId = crypto.createHash('sha1').update([...seg.ids].sort().join('|')).digest('hex')
+  const { date, time } = utcDate(seg.lastTime)
+  trades.push({ externalId, date, time, instrument: seg.instrument,
+    direction: seg.side > 0 ? 'LONG' : 'SHORT', contracts,
+    entry: entry == null ? null : r2(entry), exit: exit == null ? null : r2(exit),
+    points, pnl, result: pnl > 0 ? 'WIN' : pnl < 0 ? 'LOSS' : 'BE', commission: r2(seg.commission) })
 }
-
 export function buildTrades(fills) {
   const bySymbol = new Map()
   for (const f of fills) { if (!bySymbol.has(f.symbol)) bySymbol.set(f.symbol, []); bySymbol.get(f.symbol).push(f) }
   const trades = []
+  const start = (side, instrument) => ({ side, instrument, opens: [], closes: [], commission: 0, ids: new Set(), closeProfits: [], closePoints: [], lastTime: null })
   for (const [, list] of bySymbol) {
     list.sort((a, b) => a.time - b.time)
-    let cycle = null, pos = 0
+    let pos = 0, seg = null
     for (const f of list) {
-      if (pos === 0) cycle = { instrument: f.instrument, fills: [], openSide: Math.sign(f.qty), maxSize: 0 }
-      cycle.fills.push(f); pos += f.qty; cycle.maxSize = Math.max(cycle.maxSize, Math.abs(pos))
-      if (pos === 0) { trades.push(finalizeCycle(cycle)); cycle = null }
+      let remaining = Math.abs(f.qty)
+      const dir = Math.sign(f.qty)
+      const commPerContract = remaining ? (f.commission || 0) / remaining : 0
+      while (remaining > 0) {
+        if (pos === 0) seg = start(dir, f.instrument)
+        seg.ids.add(f.orderId); seg.lastTime = f.time
+        if (pos === 0 || dir === seg.side) {
+          const take = remaining
+          seg.opens.push({ price: f.price, qty: take })
+          seg.commission += commPerContract * take
+          pos += dir * take; remaining = 0
+        } else {
+          const take = Math.min(remaining, Math.abs(pos))
+          seg.closes.push({ price: f.price, qty: take })
+          seg.commission += commPerContract * take
+          if (f.profit !== null && f.profit !== undefined) {
+            seg.closeProfits.push(f.profit * (take / Math.abs(f.qty)))
+            seg.closePoints.push((f.points || 0) * (take / Math.abs(f.qty)))
+          } else { seg.closeProfits.push(null); seg.closePoints.push(null) }
+          pos += dir * take; remaining -= take
+          if (pos === 0) { finalize(seg, trades); seg = null }
+        }
+      }
     }
+    // posición abierta al final del fichero: se ignora (no es un round-trip cerrado)
   }
   trades.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
   return trades

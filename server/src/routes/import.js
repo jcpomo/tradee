@@ -1,6 +1,6 @@
 import { query, getPool } from '../db.js'
 import { resolveAccount } from '../accounts/guard.js'
-import { parseOrders } from '../import/parseOrders.js'
+import { parseImport } from '../import/parse.js'
 import { buildTrades } from '../import/buildTrades.js'
 
 async function need(req, reply) {
@@ -22,8 +22,8 @@ export async function importRoutes(app) {
     const file = await req.file()
     if (!file) return reply.code(400).send({ error: 'no_file', message: 'Sube un archivo CSV' })
     const buf = await file.toBuffer()
-    let trades, fillCount
-    try { const { fills } = parseOrders(buf.toString('utf8')); trades = buildTrades(fills); fillCount = fills.length }
+    let trades, fillCount, platform
+    try { const { fills, platform: p } = parseImport(buf.toString('utf8')); trades = buildTrades(fills); fillCount = fills.length; platform = p }
     catch (e) { return reply.code(400).send({ error: 'parse_error', message: e.message }) }
     if (!trades.length) return reply.code(400).send({ error: 'no_trades', message: 'Sin trades cerrados en el CSV' })
     const ids = trades.map((t) => t.externalId)
@@ -37,7 +37,7 @@ export async function importRoutes(app) {
        ON CONFLICT (account_id) DO UPDATE SET user_id=EXCLUDED.user_id, filename=EXCLUDED.filename, payload=EXCLUDED.payload, created_at=now()`,
       [acc.id, req.userId, file.filename, JSON.stringify(trades)],
     )
-    reply.send({ summary: { fills: fillCount, trades: trades.length, inserted, duplicates: trades.length - inserted, netPnl: Math.round(netPnl * 100) / 100, dateFrom: dates[0], dateTo: dates[dates.length - 1] }, proposed })
+    reply.send({ summary: { fills: fillCount, trades: trades.length, inserted, duplicates: trades.length - inserted, netPnl: Math.round(netPnl * 100) / 100, dateFrom: dates[0], dateTo: dates[dates.length - 1], platform }, proposed })
   })
 
   app.post('/import/commit', async (req, reply) => {

@@ -7,6 +7,7 @@ import { setupTestDb, makeApp, closeAll } from './helpers.js'
 import { query } from '../src/db.js'
 const dir = dirname(fileURLToPath(import.meta.url))
 const csv = await readFile(join(dir, 'fixtures/orders.csv'), 'utf8')
+const tvCsv = await readFile(join(dir, 'fixtures/tradovate-fills.csv'), 'utf8')
 let app, token, accountId
 before(async () => { await setupTestDb(); app = makeApp(); await app.ready() })
 after(async () => { await app.close(); await closeAll() })
@@ -58,6 +59,13 @@ test('commit con rebuildDailyRecords reconstruye balances corridos (no P&L diari
   }
   const last = records[records.length - 1]
   assert.equal(Math.round(last.close * 100) / 100, Math.round((50000 - 101.28) * 100) / 100)
+})
+test('preview: Tradovate fills -> 9 trades, -15.86, platform Tradovate', async () => {
+  const m = mp(tvCsv)
+  const s = (await app.inject({ method: 'POST', url: `/api/import/preview?accountId=${accountId}`, headers: { ...auth(), ...m.headers }, payload: m.body })).json().summary
+  assert.equal(s.trades, 9)
+  assert.equal(Math.round(s.netPnl * 100) / 100, -15.86)
+  assert.equal(s.platform, 'Tradovate')
 })
 test('preview sin accountId devuelve 404', async () => {
   const m = mp(csv)

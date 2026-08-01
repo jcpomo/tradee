@@ -9,8 +9,7 @@ const numOrNull = (v) => {
   return Number.isFinite(n) ? n : null
 }
 
-export function parseOrders(csvText) {
-  const records = parse(csvText, { columns: true, skip_empty_lines: true, trim: true })
+export function parseOrdersRecords(records) {
   if (!records.length) throw new Error('El CSV no tiene filas')
 
   const cols = Object.keys(records[0])
@@ -35,9 +34,15 @@ export function parseOrders(csvText) {
       qty,
       price,
       points: numOrNull(r.points),
-      profit: numOrNull(r.profit)
+      profit: numOrNull(r.profit),
+      commission: 0,
     })
   }
 
   return { fills, errors }
+}
+
+export function parseOrders(csvText) {
+  const records = parse(csvText, { columns: true, skip_empty_lines: true, trim: true })
+  return parseOrdersRecords(records)
 }
