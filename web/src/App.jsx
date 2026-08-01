@@ -7,6 +7,7 @@ import FloorTracker from './components/FloorTracker'
 import ReferenceGuide from './components/ReferenceGuide'
 import Settings from './components/Settings'
 import { useAuth } from './store/useAuth'
+import { useStore } from './store/useStore'
 import AuthScreen from './components/AuthScreen'
 
 const VALID = SCREENS.map((s) => s.id)
@@ -36,9 +37,18 @@ export default function App() {
   const bootstrap = useAuth((s) => s.bootstrap)
   const userEmail = useAuth((s) => s.user?.email)
   const logout = useAuth((s) => s.logout)
+  const activeAccountId = useAuth((s) => s.activeAccountId)
+  const hydrate = useStore((s) => s.hydrate)
+  const hydrated = useStore((s) => s.hydrated)
   useEffect(() => { bootstrap() }, [bootstrap])
+  useEffect(() => {
+    if (authStatus === 'authenticated' && activeAccountId && !hydrated) hydrate(activeAccountId)
+  }, [authStatus, activeAccountId, hydrated, hydrate])
   if (authStatus === 'loading') return <div className="min-h-screen flex items-center justify-center text-muted">Cargando…</div>
   if (authStatus === 'anonymous') return <AuthScreen />
+  if (authStatus === 'authenticated' && !hydrated) {
+    return <div className="min-h-screen flex items-center justify-center text-muted">Cargando cuenta…</div>
+  }
 
   return (
     <div className="min-h-screen bg-bg">
@@ -60,7 +70,7 @@ export default function App() {
 
       <footer className="border-t border-border py-6 text-center md:block hidden">
         <p className="text-[11px] text-muted">
-          Apex 50K Intraday Trailing Drawdown · Datos guardados solo en este navegador (localStorage)
+          Apex 50K Intraday Trailing Drawdown · Datos sincronizados con tu cuenta
         </p>
       </footer>
     </div>

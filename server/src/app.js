@@ -10,6 +10,7 @@ import { requireAuth } from './auth/requireAuth.js'
 import { stateRoutes } from './routes/state.js'
 import { tradesRoutes } from './routes/trades.js'
 import { dailyRecordsRoutes } from './routes/dailyRecords.js'
+import { accountsRoutes } from './routes/accounts.js'
 
 export function buildApp() {
   const app = Fastify({ logger: false })
@@ -31,6 +32,7 @@ export function buildApp() {
     await stateRoutes(api)
     await tradesRoutes(api)
     await dailyRecordsRoutes(api)
+    await accountsRoutes(api)
   }, { prefix: '/api' })
   app.get('/health', async () => ({ status: 'ok' }))
   return app

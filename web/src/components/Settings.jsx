@@ -1,27 +1,27 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useStore, DEFAULT_SETTINGS, SETTINGS_RANGES } from '../store/useStore'
 import { useAccount } from '../store/useAccount'
 import { Section, Field, NoteBox, Toggle } from './ui'
 import { CALC_INSTRUMENTS, INSTRUMENTS } from '../data/instruments'
 import { fmtUSD, todayISO } from '../utils/calculations'
-import { downloadFile, readFileAsText } from '../utils/storage'
+import { API_BASE, getAccessToken } from '../api/client'
 
 const RR_OPTIONS = [1, 1.5, 2, 2.5, 3, 4, 5]
+const DRAWDOWN_MODES = [
+  { value: 'intraday', label: 'Intraday' },
+  { value: 'eod', label: 'EOD' },
+  { value: 'static', label: 'Static' },
+]
 
 export default function Settings() {
   const a = useAccount()
-  const settings = useStore((s) => s.settings)
+  const account = useStore((s) => s.account)
   const updateSettings = useStore((s) => s.updateSettings)
-  const resetSettings = useStore((s) => s.resetSettings)
-  const exportJSON = useStore((s) => s.exportJSON)
-  const importJSON = useStore((s) => s.importJSON)
-  const resetAll = useStore((s) => s.resetAll)
   const trades = useStore((s) => s.trades)
   const dailyRecords = useStore((s) => s.dailyRecords)
+  const settings = a.settings
 
-  const fileRef = useRef(null)
   const [msg, setMsg] = useState(null)
-  const [confirmReset, setConfirmReset] = useState(false)
 
   const flash = (tone, text) => {
     setMsg({ tone, text })
@@ -51,32 +51,27 @@ export default function Settings() {
     />
   )
 
-  const doExport = () => {
-    downloadFile(`apex-dashboard-${todayISO()}.json`, exportJSON(), 'application/json')
-    flash('green', 'Copia de seguridad descargada')
-  }
-
-  const doImport = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const doExportCsv = async () => {
     try {
-      importJSON(await readFileAsText(file))
-      flash('green', 'Datos importados correctamente')
+      const token = getAccessToken()
+      const res = await fetch(`${API_BASE}/api/trades/export.csv?accountId=${encodeURIComponent(account.id)}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: 'include',
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `apex-trades-${todayISO()}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      flash('green', 'CSV descargado')
     } catch (err) {
-      flash('red', `No se pudo importar: ${err.message}`)
+      flash('red', `No se pudo exportar: ${err.message}`)
     }
-    e.target.value = ''
-  }
-
-  const doResetAll = () => {
-    if (!confirmReset) {
-      setConfirmReset(true)
-      setTimeout(() => setConfirmReset(false), 5000)
-      return
-    }
-    resetAll()
-    setConfirmReset(false)
-    flash('green', 'Todo borrado — la app vuelve a los valores por defecto')
   }
 
   const [riskMin, riskMax] = SETTINGS_RANGES.riskPerTrade
@@ -109,7 +104,15 @@ export default function Settings() {
                 { value: 'PA', label: 'PA (fondeada)' },
               ]}
               value={settings.accountType}
-              onChange={(v) => updateSettings({ accountType: v })}
+              onChange={(v) => updateSettings({ accountKind: v })}
+            />
+          </Field>
+          <Field label="Modo de drawdown" hint="Cómo se calcula el suelo: en vivo, al cierre del día o fijo">
+            <Toggle
+              options={DRAWDOWN_MODES}
+              value={account?.drawdownMode}
+              onChange={(v) => updateSettings({ drawdownMode: v })}
+              size="sm"
             />
           </Field>
         </div>
@@ -207,35 +210,22 @@ export default function Settings() {
             actual de {fmtUSD(a.margin)} da para {a.tradesLeft} trades antes de tocar el suelo.
           </NoteBox>
         </div>
-
-        <div className="mt-4">
-          <button className="btn-ghost" onClick={resetSettings}>
-            Restaurar valores por defecto
-          </button>
-        </div>
       </Section>
 
       <Section
         title="Datos"
-        subtitle={`${trades.length} trades · ${dailyRecords.length} días registrados · guardado en localStorage`}
+        subtitle={`${trades.length} trades · ${dailyRecords.length} días registrados · sincronizado con tu cuenta`}
       >
         <div className="flex flex-wrap gap-2">
-          <button className="btn-primary" onClick={doExport}>
-            Exportar JSON
-          </button>
-          <button className="btn-ghost" onClick={() => fileRef.current?.click()}>
-            Importar JSON
-          </button>
-          <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={doImport} />
-          <button className={confirmReset ? 'btn-danger' : 'btn-ghost'} onClick={doResetAll}>
-            {confirmReset ? '¿Seguro? Pulsa otra vez para borrar todo' : 'Borrar todos los datos'}
+          <button className="btn-primary" onClick={doExportCsv}>
+            Exportar CSV de trades
           </button>
         </div>
 
         <div className="mt-4">
           <NoteBox tone="blue">
-            Todo vive en este navegador. Si borras los datos del sitio o cambias de dispositivo, pierdes el histórico —
-            exporta el JSON de vez en cuando como copia de seguridad.
+            Tus datos viven en el servidor, asociados a esta cuenta — puedes cambiar de dispositivo sin perder nada.
+            Exporta el CSV cuando quieras una copia local del diario de trades.
           </NoteBox>
         </div>
       </Section>
