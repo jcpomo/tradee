@@ -9,6 +9,7 @@ import { authRoutes } from './auth/routes.js'
 import { requireAuth } from './auth/requireAuth.js'
 import { stateRoutes } from './routes/state.js'
 import { tradesRoutes } from './routes/trades.js'
+import { dailyRecordsRoutes } from './routes/dailyRecords.js'
 
 export function buildApp() {
   const app = Fastify({ logger: false })
@@ -29,6 +30,7 @@ export function buildApp() {
     api.addHook('preHandler', requireAuth)
     await stateRoutes(api)
     await tradesRoutes(api)
+    await dailyRecordsRoutes(api)
   }, { prefix: '/api' })
   app.get('/health', async () => ({ status: 'ok' }))
   return app
